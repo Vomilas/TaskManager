@@ -1,0 +1,52 @@
+<template>
+    <div class="newBoardMenu">
+       <div class="popup__wrapper" @click="closeMenu"></div>
+        <div class="popup__body">
+            <div class="popup__title">Создать новую доску</div>
+            <label for="" class="popup__label">
+                <div class="popup__text">Введите имя для доски:</div>
+                <input type="text" v-model="newBoard.boardName">
+            </label>
+            <label for="" class="popup__label">
+                <div class="popup__text">Введите описание доски:</div>
+                <input type="text" v-model="newBoard.description">
+            </label>
+            <button class="popup__submit" @click.prevent="createNewBoard">Создать доску</button>
+        </div>
+    </div>
+</template>
+
+<script>
+import axios from 'axios'
+export default{
+    props:['currentUser'],
+    data(){
+        return{
+            newBoard:{
+                boardName:"",
+                description:""
+            }
+        }
+    },
+    methods:{
+        closeMenu(){
+            this.$emit('wrapperClick');
+        },
+        createNewBoard(){
+            var self = this;
+            axios({
+                method: 'post',
+                url: 'http://'+host+':'+port+'/api/users/'+self.currentUser.id+'/boards/',
+                data:self.newBoard
+            }).then(function (response) {
+                self.$emit('wrapperClick');
+                self.$root.$emit('updateBoard');
+                document.location.replace("/board");
+            }).catch(function (error) {
+                alert("Error! "+ error)
+            });
+
+        }
+    }
+}
+</script>
