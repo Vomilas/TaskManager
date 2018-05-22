@@ -3,22 +3,26 @@
         <div class="popup__wrapper" @click="closeMenu"></div>
         <div class="popup__body">
             <div class="taskMenu__header">
-                <input type="text" v-model="taskItem.taskName" placeholder="Имя задачи" class="taskMenu__input taskMenu__taskName">
+                <input type="text" v-model="taskItem.taskName" placeholder="Имя задачи" class="taskMenu__taskName popup__input">
 
             </div>
             <div class="taskMenu__body">
                 <div class="taskMenu__left">
-                   <div class="popup__text">Описание задачи</div>
-                    <textarea v-model="taskItem.description" placeholder="Описание задачи" class="taskMenu__textarea"></textarea>
+                    <textarea v-model="taskItem.description" placeholder="Описание задачи" class="popup__area"></textarea>
+                    <div class="popup__text">Исполнитель</div>
+                    <select name="userList" class="popup__select" v-model="selectedUser">
+                        <option v-for="user in invitedUserList"
+                        v-bind:value="user">{{user.username}}</option>
+                    </select>
                 </div>
                 <div class="taskMenu__right">
                     <div class="popup__text">Статус</div>
-                    <select name="statusList"  @change="selectStatus" v-model="selectedStatus">
+                    <select name="statusList" class="popup__select" @change="selectStatus" v-model="selectedStatus">
                         <option v-for="statusItem in statusList"
                         v-bind:value="statusItem.taskStatus.id">{{statusItem.taskStatus.statusName}}</option>
                     </select>
                     <div class="popup__text">Шаблон</div>
-                    <select name="templateList"  @change="selectTemplate" v-model="selectedTemplate">
+                    <select name="templateList" class="popup__select" @change="selectTemplate" v-model="selectedTemplate">
                         <option v-for="templateItem in templateList"
                         v-bind:value="templateItem">{{templateItem.taskTemplateName}}</option>
                     </select>
@@ -29,7 +33,7 @@
                 <ul class="custom__list">
                     <li class="custom__item" v-for="customField in customFieldsList">
                         <div class="popup__text">{{customField.attribute.attributeName}}</div>
-                        <input type="text" v-model="customField.stringValue" class="taskMenu__input taskMenu__taskName">
+                        <input :type="customField.attribute.attributeType" v-model="customField.stringValue" class="taskMenu__taskName popup__input">
                     </li>
                 </ul>
             </div>
@@ -46,8 +50,10 @@ export default{
         return{
             selectedStatus:"",
             selectedTemplate:"",
+            selectedUser:"",
             attributeList:"",
             customFieldsList:[],
+            invitedUserList:[],
             taskItem:{
                 taskName:"",
                 description:"",
@@ -60,7 +66,7 @@ export default{
                 author:{
                     id:this.currentUser.id
                 },
-                taskTemplate: ""
+                taskTemplate: "",
             }
         }
     },
@@ -73,6 +79,16 @@ export default{
                 self.getListOfAttributes(template.id);
             }
         });
+        axios.get(host+'/api/members/?access_token='+getCookie("access_token")).then(function(response){
+            self.invitedUserList = [];
+            response.data.forEach(function(member){
+                if(member.board.id == getCookie("current_board")){
+                    self.invitedUserList.push(member.user);
+                }
+            })
+        }).catch(function(error){
+            self.$root.$emit('showDialog',error.response.data.error+"; "+error.response.data.message,'showError');
+        })
     },
     methods:{
         closeMenu(){
@@ -84,12 +100,13 @@ export default{
             this.taskItem.taskTemplate = this.selectedTemplate;
             axios({
                 method: 'post',
-                url: 'http://'+host+':'+port+'/api/users/'+self.currentUser.id+'/tasks/',
+                url: host+'/api/users/'+self.currentUser.id+'/tasks/?access_token='+getCookie("access_token"),
                 data:self.taskItem
             }).then(function (response) {
                 self.sendCustomFields(response.data);
+                self.sendSelectedUser(response.data);
             }).catch(function (error) {
-                alert("Error! "+ error)
+                self.$root.$emit('showDialog',error.response.data.error+"; "+error.response.data.message,'showError');
             });
         },
         selectStatus(){
@@ -100,12 +117,12 @@ export default{
         },
         getListOfAttributes(templateId){
             var self = this;
-            axios.get('http://'+host+':'+port+'/api/tasktemplates/'+templateId+'/attributes/').then(function(response){
+            axios.get(host+'/api/tasktemplates/'+templateId+'/attributes/?access_token='+getCookie("access_token")).then(function(response){
                 self.attributeList = response.data;
                 self.$root.$emit('updateBoard');
                 self.addNewCustomField();
             }).catch(function(error){
-                alert(error);
+                self.$root.$emit('showDialog',error.response.data.error+"; "+error.response.data.message,'showError');
             })
         },
         addNewCustomField(){
@@ -131,7 +148,7 @@ export default{
                 customField.task = taskItem;
                 axios({
                     method: 'post',
-                    url: 'http://'+host+':'+port+'/api/customfields/',
+                    url: host+'/api/customfields/?access_token='+getCookie("access_token"),
                     data:customField
                 }).catch(function (error) {
                     postError = error;
@@ -142,8 +159,18 @@ export default{
             self.$emit('wrapperClick');
             }
             else{
-                alert(postError);
+                self.$root.$emit('showDialog',error.response.data.error+"; "+error.response.data.message,'showError');
             }
+        },
+        sendSelectedUser(taskItem){
+            var self = this;
+            axios({
+                method: 'post',
+                url: host+'/api/tasks/'+taskItem.id+'/users/?access_token='+getCookie("access_token"),
+                data: self.selectedUser
+            }).catch(function (error) {
+                self.$root.$emit('showDialog',error.response.data.error+"; "+error.response.data.message,'showError');
+            });
         }
     }
 }
@@ -151,35 +178,31 @@ export default{
 
 <style lang="scss" scoped>
     .taskMenu__header{
-        width: 100%;
+        display: flex;
+        justify-content: space-around;
         padding: 20px;
-    }
-    .taskMenu__taskName{
-        margin: 0 auto;
+        border-bottom: 2px dashed rgba(black, .5);
     }
     .taskMenu__body{
         display: flex;
         justify-content: space-between;
         margin: 0 30px;
     }
-    .taskMenu__input{
-        display: block;
+    .taskMenu__taskName{
+        margin: 0 auto;
     }
     .taskMenu__left,.taskMenu__right{
-        padding: 10px;
-        border: 1px solid black;
+        padding: 10px 0;
+    }
+    .taskMenu__right{
+        margin: 0 auto;
     }
     .taskMenu__left{
         min-width: 450px;
-    }
-    .taskMenu__textarea{
-        width: 400px;
-        min-height: 100px;
-        resize: none;
+        border-right: 2px dashed rgba(black, .5);
     }
     .taskMenu__custom{
-        border: 1px solid black;
-        margin: 20px 30px;
+        border-top: 2px dashed rgba(black, .5);
         padding: 10px;
     }
 </style>

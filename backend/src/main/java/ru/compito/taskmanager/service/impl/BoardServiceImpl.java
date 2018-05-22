@@ -4,10 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compito.taskmanager.entity.*;
-import ru.compito.taskmanager.repository.BoardRepository;
-import ru.compito.taskmanager.repository.BoardStatusRepository;
-import ru.compito.taskmanager.repository.TaskRepository;
-import ru.compito.taskmanager.repository.UserRepository;
+import ru.compito.taskmanager.entity.enums.RoleType;
+import ru.compito.taskmanager.repository.*;
 import ru.compito.taskmanager.service.BoardService;
 
 import java.util.*;
@@ -24,10 +22,13 @@ public class BoardServiceImpl implements BoardService{
     private TaskRepository taskRepository;
     @Autowired
     private BoardStatusRepository boardStatusRepository;
+    @Autowired
+    private MemberRepository memberRepository;
+
 
     @Override
     public Board getOne(Integer Id) {
-        return boardRepository.getOne(Id);
+        return boardRepository.findOne(Id);
     }
 
     @Override
@@ -39,7 +40,15 @@ public class BoardServiceImpl implements BoardService{
     public Board save(Integer userId, Board board) {
         User user = userRepository.getOne(userId);
         board.setBoardOwner(user);
-        return boardRepository.save(board);
+        /**TODO
+        if(!roleRepository.existsByRoleName("Owner"))
+            roleRepository.save(new Role("Owner"));
+        Role role = roleRepository.findByRoleName("Owner");
+         */
+        Member member = new Member(user,board, RoleType.OWNER);
+        Board newBoard = boardRepository.save(board);
+        memberRepository.save(member);
+        return newBoard;
     }
 
     @Override
@@ -56,6 +65,7 @@ public class BoardServiceImpl implements BoardService{
             task.setUsers(Collections.emptyList());
             taskRepository.save(task);
         }
+        memberRepository.deleteAllByBoard(board);
         taskRepository.deleteAllByBoard(board);
         boardRepository.delete(board);
     }
@@ -80,20 +90,17 @@ public class BoardServiceImpl implements BoardService{
     @Override
     public List<User> getUsersById(Integer boardId) {
         Board board = boardRepository.getOne(boardId);
-        List<Task> tasks = taskRepository.findAllByBoard(board);
-        Set<User> users = new HashSet<>();
+        List<Member> members = memberRepository.findAllByBoard(board);
         List<User> userList = new ArrayList<>();
-        for(Task task : tasks){
-            users.addAll(userRepository.findAllByTasks(task));
-        }
-        userList.addAll(users);
+        for(Member member : members)
+            userList.add(member.getUser());
         return userList;
     }
     @Override
-    public void addBoardStatus(Integer boardId, TaskStatus taskStatus) {
+    public BoardStatus addBoardStatus(Integer boardId, TaskStatus taskStatus) {
         Board board = boardRepository.getOne(boardId);
         BoardStatus boardStatus = new BoardStatus(board, taskStatus);
-        boardStatusRepository.save(boardStatus);
+        return boardStatusRepository.save(boardStatus);
     }
 
     @Override

@@ -69,7 +69,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Task getTaskByUserId(Integer userId, Integer taskId) {
-        User user = userRepository.getOne(userId);
+        User user = userRepository.findOne(userId);
         return taskRepository.findByUsersAndId(user, taskId);
     }
 
@@ -77,6 +77,12 @@ public class TaskServiceImpl implements TaskService {
     public List<Task> findByTaskTemplateId(Integer taskTemplateId) {
         TaskTemplate taskTemplate = taskTemplateRepository.getOne(taskTemplateId);
         return taskRepository.findAllByTaskTemplate(taskTemplate);
+    }
+
+    @Override
+    public Task getByTaskTemplateId(Integer taskTemplateId) {
+        TaskTemplate taskTemplate = taskTemplateRepository.getOne(taskTemplateId);
+        return taskRepository.findByTaskTemplate(taskTemplate);
     }
 
     @Override
@@ -91,6 +97,15 @@ public class TaskServiceImpl implements TaskService {
         TaskTemplate taskTemplate = taskTemplateRepository.getOne(taskTemplateId);
         task.setTaskTemplate(taskTemplate);
         return taskRepository.save(task);
+    }
+
+    @Override
+    public void addUser(Task task, User user) {
+        User newUser = userRepository.getOne(user.getId());
+        List<User> users = task.getUsers();
+        users.add(newUser);
+        task.setUsers(users);
+        taskRepository.save(task);
     }
 
     @Override

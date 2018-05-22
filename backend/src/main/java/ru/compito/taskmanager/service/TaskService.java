@@ -2,6 +2,7 @@ package ru.compito.taskmanager.service;
 
 import ru.compito.taskmanager.entity.Task;
 import ru.compito.taskmanager.entity.TaskTemplate;
+import ru.compito.taskmanager.entity.User;
 
 import java.util.List;
 
@@ -15,6 +16,8 @@ public interface TaskService {
     void deleteAllForUser(Integer userId);
     Task getTaskByUserId(Integer userId, Integer taskId);
     List<Task> findByTaskTemplateId(Integer taskTemplateId);
+    Task getByTaskTemplateId(Integer taskTemplateId);
     Task getByTaskTemplateAndTaskId(Integer taskTemplateId, Integer taskId);
     Task updateTaskTemplate(Integer taskTemplateId, Integer taskId);
+    void addUser(Task task, User user);
 }

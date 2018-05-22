@@ -4,12 +4,10 @@
         <div class="popup__body">
             <div class="popup__title">Создать новую доску</div>
             <label for="" class="popup__label">
-                <div class="popup__text">Введите имя для доски:</div>
-                <input type="text" v-model="newBoard.boardName">
+                <input type="text" class="popup__input" v-model="newBoard.boardName" placeholder="Название новой доски">
             </label>
             <label for="" class="popup__label">
-                <div class="popup__text">Введите описание доски:</div>
-                <input type="text" v-model="newBoard.description">
+                <input type="text" class="popup__input" v-model="newBoard.description" placeholder="Описание доски">
             </label>
             <button class="popup__submit" @click.prevent="createNewBoard">Создать доску</button>
         </div>
@@ -36,14 +34,15 @@ export default{
             var self = this;
             axios({
                 method: 'post',
-                url: 'http://'+host+':'+port+'/api/users/'+self.currentUser.id+'/boards/',
+                url: host+'/api/users/'+self.currentUser.id+'/boards/?access_token='+getCookie("access_token"),
                 data:self.newBoard
             }).then(function (response) {
+                self.$root.$emit('onBoardSelect', response.data);
                 self.$emit('wrapperClick');
                 self.$root.$emit('updateBoard');
-                document.location.replace("/board");
+                window.location = "#/board";
             }).catch(function (error) {
-                alert("Error! "+ error)
+                self.$root.$emit('showDialog',error.response.data.error+"; "+error.response.data.message,'showError');
             });
 
         }

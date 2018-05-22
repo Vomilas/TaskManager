@@ -4,7 +4,7 @@
         <div class="popup__body">
             <div class="popup__title">Список досок</div>
             <ul class="boardListMenu__list">
-                <li class="boardListMenu__item" v-for="board in boardList"><a href="" class="boardListMenu__link" @click.prevent="selectBoard(board)">{{board.boardName}}</a></li>
+                <li class="boardListMenu__item" v-for="member in memberList"><a href="" class="boardListMenu__link" @click.prevent="selectBoard(member.board)"> {{member.board.boardName}} [{{member.role}}]</a></li>
             </ul>
 
         </div>
@@ -16,7 +16,7 @@ import axios from 'axios'
 export default{
     data(){
         return{
-            boardList: ""
+            memberList: ""
         }
     },
     methods:{
@@ -30,9 +30,9 @@ export default{
     },
     created(){
         var self = this;
-        axios.get('http://'+host+':'+port+'/api/getUserId/?access_token=' + getCookie("access_token")).then(function(response){
-            axios.get('http://'+host+':'+port+'/api/users/'+response.data+'/boards/').then(function(response){
-                self.boardList = response.data;
+        axios.get(host+'/api/getUserId/?access_token=' + getCookie("access_token")).then(function(response){
+            axios.get(host+'/api/users/'+response.data+'/members/?access_token='+getCookie("access_token")).then(function(response){
+                self.memberList = response.data;
             })
         })
     }
@@ -44,16 +44,17 @@ export default{
         margin: 5px;
     }
     .boardListMenu__link{
-        display: inline-block;
-        width: 100%;
-        padding: 5px;
+        display: block;
+        padding: 7px;
         text-decoration: none;
-        color: black;
-        border: 1px solid black;
-        border-radius: 10px;
-        background: #ebebeb;
+        color: #757575;
+        border-radius: 5px;
+        background: #fff;
+        margin-bottom: 7px;
+        box-shadow: 1px 1px 4px rgba(black, .5);
+        transition: box-shadow .3s;
         &:hover{
-            background: #ffffff;
+            box-shadow: none;
         }
     }
 

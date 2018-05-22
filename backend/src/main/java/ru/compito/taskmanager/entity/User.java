@@ -46,12 +46,7 @@ public class User {
     @NotNull
     //@Pattern(regexp = EMAIL_REGEX)
     private String email;
-    /*
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_role", joinColumns
-            = @JoinColumn(name = "user_id", referencedColumnName = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
-    private List<Role> roles;*/
+
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "users")
     private List<Task> createdTasks = new ArrayList<>();
@@ -67,8 +62,9 @@ public class User {
 
     }
 
-    public User(String username, String password, String email) {
+    public User(String username, String fullname, String password, String email) {
         this.username = username;
+        this.fullname = fullname;
         this.password = password;
         this.email = email;
     }
@@ -105,11 +101,11 @@ public class User {
         this.email = email;
     }
 /*
-    public List<Role> getRoles() {
+    public List<Member> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<Role> roles) {
+    public void setRoles(List<Member> roles) {
         this.roles = roles;
     }
 */
